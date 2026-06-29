@@ -5,6 +5,10 @@
 
 ARCHIV-COST is a specialized, client-side web application designed to bridge the gap between classical management accounting and modern AI-driven intelligence. Built for professional accountants and forensic auditors, this tool provides a secure, locally-rendered environment to upload ledger data, perform complex variance analysis, and generate structured cost reports using Google Gemini 2.5.
 
+Install Coding Agent Plugin
+Turn your coding agent into a Vercel expert. Simply copy and run this in your terminal to install the plugin. Available for Claude, Cursor and Codex.
+npx plugins add vercel/vercel-plugin
+
 Forget tedious manual calculations—leverage an AI agent tailored to understand Prime Costs, Activity-Based Costing (ABC), and Overhead Disposition at a granular level.
 
 ✨ Unique Features
