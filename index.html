@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARCHIV-COST // Professional Cost Accounting Ledger & LLM Notebook</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts for Archival styling -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght=0,400;0,700;1,400;1,700&family=Fraunces:ital,opsz,wght=0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=Plus+Jakarta+Sans:wght=300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- PDF.js library for client-side PDF parsing and text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
+  <style>
+    /* Archive/Vintage Academic Custom Theme Override */
+    :root {
+      --color-cream-light: #FDFBF7;
+      --color-cream-dark: #F5F1E6;
+      --color-cream-border: #D7CFC1;
+      --color-ink: #1B2021;
+      --color-ink-muted: #5F6768;
+      --color-archive-blue: #2A4E65;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--color-cream-light);
+      color: var(--color-ink);
+    }
+
+    .serif-title {
+      font-family: 'Fraunces', serif;
+    }
+
+    .mono-ledger {
+      font-family: 'Courier Prime', monospace;
+    }
+
+    /* Elegant Custom Scrollbars for the archive look */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--color-cream-light);
+      border-left: 1px solid var(--color-cream-border);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-cream-border);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--color-ink-muted);
+    }
+
+    /* Ledger Notebook Paper Lines styling */
+    .ledger-grid {
+      background-size: 100% 2rem;
+      background-image: linear-gradient(to bottom, transparent 97%, #E2DBD0 97%);
+      line-height: 2rem;
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden selection:bg-amber-100 selection:text-amber-900">
+
+  <!-- TOP HEADER / CONTROLS BAR -->
+  <header class="h-16 border-b border-[#D7CFC1] bg-[#F5F1E6] flex items-center justify-between px-6 z-10 select-none shadow-sm">
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 rounded-md bg-[#2A4E65] flex items-center justify-center text-white font-serif font-bold text-lg shadow-inner">
+        A
+      </div>
+      <div>
+        <h1 class="serif-title text-lg font-semibold tracking-tight text-[#1B2021] flex items-center gap-2">
+          ARCHIV-COST 
+          <span class="text-xs font-mono px-2 py-0.5 bg-[#E8E2D2] text-[#2A4E65] border border-[#CFC5B4] rounded">SYSTEM.V2.5</span>
+        </h1>
+        <p class="text-[10px] uppercase tracking-widest text-[#5F6768] font-mono -mt-1">Cost Accounting Automation & Auditing Notebook</p>
+      </div>
+    </div>
+
+    <!-- Right Side API Controls & Indicators -->
+    <div class="flex items-center space-x-4">
+      <!-- Info Alert Box Trigger -->
+      <button onclick="toggleHelpModal()" class="text-[#5F6768] hover:text-[#1B2021] p-1.5 rounded-full hover:bg-[#E8E2D2] transition-all" title="Help Guide">
+        <i data-lucide="help-circle" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Gemini API Integration Bar -->
+      <div class="flex items-center bg-[#ECE6D9] border border-[#CFC5B4] rounded-lg p-1 space-x-2">
+        <div class="flex items-center px-2 space-x-1">
+          <i data-lucide="key" class="w-4 h-4 text-[#5F6768]"></i>
+          <span class="text-xs font-mono font-medium text-[#1B2021]">GEMINI API KEY:</span>
+        </div>
+        <input 
+          id="apiKeyInput" 
+          type="password" 
+          placeholder="AIzaSy..." 
+          class="bg-white border border-[#CFC5B4] text-xs font-mono rounded px-3 py-1 w-48 focus:outline-none focus:ring-1 focus:ring-[#2A4E65] text-[#1B2021]"
+        />
+        <button 
+          id="connectBtn" 
+          onclick="validateAndSetApiKey()" 
+          class="bg-[#2A4E65] hover:bg-[#1E384A] text-white text-xs font-mono font-medium px-3 py-1 rounded transition-all shadow-sm"
+        >
+          CONNECT
+        </button>
+      </div>
+
+      <!-- Connection Status indicator -->
+      <div class="flex items-center space-x-2 border-l border-[#CFC5B4] pl-4">
+        <div id="statusDot" class="w-3.5 h-3.5 rounded-full bg-red-500 animate-pulse border border-red-700/30"></div>
+        <span id="statusLabel" class="text-xs font-mono uppercase tracking-wider text-[#5F6768] font-semibold">NOT CONNECTED</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP PANELS (Three Column Layout) -->
+  <main class="flex-1 grid grid-cols-12 h-[calc(100vh-64px)] overflow-hidden">
+    
+    <!-- COLUMN 1: LEFT SIDE - DOCUMENT LIBRARY (Width: 2.5/12) -->
+    <section class="col-span-3 border-r border-[#D7CFC1] bg-[#F5F1E6] flex flex-col overflow-hidden h-full">
+      
+      <!-- Panel Header -->
+      <div class="p-4 border-b border-[#D7CFC1] bg-[#ECE6D9]">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="serif-title text-sm font-semibold tracking-wide text-[#1B2021] uppercase flex items-center gap-2">
+            <i data-lucide="folder-archive" class="w-4 h-4 text-[#2A4E65]"></i> Document Library
+          </h2>
+          <span id="docCountBadge" class="text-xs font-mono px-2 py-0.5 bg-white border border-[#CFC5B4] rounded text-[#2A4E65] font-bold">3 Files</span>
+        </div>
+        <p class="text-xs text-[#5F6768]">Archive ledgers, cost breakdowns, activity reports or raw CSV/txt files.</p>
+      </div>
+
+      <!-- File Drag and Drop/Upload Area -->
+      <div class="p-4 border-b border-[#D7CFC1]">
+        <label 
+          for="docUploadInput" 
+          class="flex flex-col items-center justify-center border-2 border-dashed border-[#CFC5B4] hover:border-[#2A4E65] bg-[#FDFBF7] p-5 rounded-lg cursor-pointer transition-all hover:shadow-inner group"
+        >
+          <div class="flex flex-col items-center justify-center text-center">
+            <i data-lucide="upload-cloud" class="w-8 h-8 text-[#5F6768] group-hover:text-[#2A4E65] group-hover:scale-110 transition-transform duration-200"></i>
+            <span class="mt-2 text-xs font-medium text-[#1B2021] group-hover:text-[#2A4E65]">Upload Ledger/Report File</span>
+            <span class="mt-1 text-[10px] text-[#5F6768] uppercase font-mono">PDF, CSV, TXT, JSON, MD</span>
+          </div>
+          <input 
+            id="docUploadInput" 
+            type="file" 
+            multiple 
+            accept=".csv, .txt, .json, .md, .pdf" 
+            class="hidden" 
+            onchange="handleFileUpload(event)"
+          />
+        </label>
+      </div>
+
+      <!-- Saved & Preloaded Document List -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-2" id="docListContainer">
+        <!-- Built-in/Uploaded items will render here dynamically -->
+      </div>
+
+      <!-- Cost Intelligence Quick Filters -->
+      <div class="p-3 bg-[#ECE6D9] border-t border-[#D7CFC1] space-y-2">
+        <span class="text-[10px] font-mono uppercase tracking-widest text-[#5F6768] block">Pre-baked Cost Workbooks</span>
+        <div class="grid grid-cols-1 gap-1.5">
+          <button onclick="loadDemoLedger('variance')" class="text-left text-xs bg-[#FDFBF7] hover:bg-[#F3EDE2] border border-[#CFC5B4] p-2 rounded flex items-center gap-2 transition-all group">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <div class="flex-1 overflow-hidden">
+              <p class="font-medium text-[#1B2021] truncate group-hover:text-[#2A4E65]">Standard Cost Variance</p>
+              <p class="text-[9px] text-[#5F6768] font-mono">Q2_VARIANCES_REPORT.csv</p>
+            </div>
+          </button>
+          <button onclick="loadDemoLedger('abc')" class="text-left text-xs bg-[#FDFBF7] hover:bg-[#F3EDE2] border border-[#CFC5B4] p-2 rounded flex items-center gap-2 transition-all group">
+            <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+            <div class="flex-1 overflow-hidden">
+              <p class="font-medium text-[#1B2021] truncate group-hover:text-[#2A4E65]">Activity-Based Costing Model</p>
+              <p class="text-[9px] text-[#5F6768] font-mono">ABC_ALLOCATIONS_FY26.txt</p>
+            </div>
+          </button>
+          <button onclick="loadDemoLedger('overhead')" class="text-left text-xs bg-[#FDFBF7] hover:bg-[#F3EDE2] border border-[#CFC5B4] p-2 rounded flex items-center gap-2 transition-all group">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            <div class="flex-1 overflow-hidden">
+              <p class="font-medium text-[#1B2021] truncate group-hover:text-[#2A4E65]">Under/Over-applied Overhead</p>
+              <p class="text-[9px] text-[#5F6768] font-mono">OVERHEAD_DISPOSITION.json</p>
+            </div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUMN 2: CENTER - DOCUMENT VIEWER (Width: 5/12) -->
+    <section class="col-span-5 bg-white border-r border-[#D7CFC1] flex flex-col overflow-hidden h-full">
+      <!-- Toolbar -->
+      <div class="h-14 border-b border-[#D7CFC1] bg-[#F5F1E6] flex items-center justify-between px-4 select-none shrink-0">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="eye" class="w-4 h-4 text-[#2A4E65]"></i>
+          <h3 class="serif-title text-sm font-semibold text-[#1B2021]">Archival Document Reader</h3>
+        </div>
+        
+        <!-- View Mode Selectors -->
+        <div class="flex bg-[#ECE6D9] p-1 rounded-md border border-[#CFC5B4]">
+          <button 
+            id="tabRenderBtn" 
+            onclick="setViewerTab('rendered')" 
+            class="text-[11px] font-mono font-medium px-2.5 py-1 rounded bg-[#FDFBF7] text-[#1B2021] shadow-sm transition-all"
+          >
+            LEDGER
+          </button>
+          <button 
+            id="tabRawBtn" 
+            onclick="setViewerTab('raw')" 
+            class="text-[11px] font-mono font-medium px-2.5 py-1 rounded text-[#5F6768] hover:text-[#1B2021] transition-all"
+          >
+            RAW SOURCE
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Analysis Ledger Tools -->
+      <div class="bg-[#FDFBF7] px-4 py-2 border-b border-[#D7CFC1] flex items-center gap-2 overflow-x-auto select-none shrink-0">
+        <span class="text-[10px] font-mono uppercase tracking-wider text-[#5F6768] font-bold">Ledger Actions:</span>
+        <button onclick="injectPromptAction('Analyze Variances')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/60 rounded px-2.5 py-1 transition-all flex items-center gap-1.5 shrink-0">
+          <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Variance Breakdown
+        </button>
+        <button onclick="injectPromptAction('Audit Ledger Anomalies')" class="text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200/60 rounded px-2.5 py-1 transition-all flex items-center gap-1.5 shrink-0">
+          <i data-lucide="alert-octagon" class="w-3.5 h-3.5"></i> Audit Anomalies
+        </button>
+        <button onclick="injectPromptAction('Find Overhead Drivers')" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/60 rounded px-2.5 py-1 transition-all flex items-center gap-1.5 shrink-0">
+          <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Cost Drivers
+        </button>
+        <button onclick="injectPromptAction('Suggest Cost Optimization')" class="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200/60 rounded px-2.5 py-1 transition-all flex items-center gap-1.5 shrink-0">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Suggest Reductions
+        </button>
+      </div>
+
+      <!-- Content Viewer Container -->
+      <div class="flex-1 overflow-y-auto p-6 bg-[#FDFBF7] relative" id="viewerMainArea">
+        <!-- Rendered Tab -->
+        <div id="viewRendered" class="space-y-4">
+          <!-- Active Doc Header Info -->
+          <div class="border-b-2 border-double border-[#CFC5B4] pb-3 mb-4">
+            <div class="flex items-center justify-between text-xs font-mono text-[#5F6768]">
+              <span id="renderDocMetaType">DOCUMENT INDEX CARD</span>
+              <span id="renderDocMetaDate">SYSTEM RECOVERY</span>
+            </div>
+            <h4 id="renderDocTitle" class="serif-title text-xl font-bold text-[#1B2021] mt-1">Select a document from Library</h4>
+            <div class="flex items-center gap-2 mt-2">
+              <span id="renderDocSize" class="text-[10px] font-mono px-2 py-0.5 bg-[#F5F1E6] rounded border border-[#D7CFC1] text-[#5F6768]">0 bytes</span>
+              <span id="renderDocStatus" class="text-[10px] font-mono px-2 py-0.5 bg-green-50 text-green-700 rounded border border-green-200">READY</span>
+            </div>
+          </div>
+
+          <!-- Ledger Visual Display (Dynamically updated) -->
+          <div id="ledgerVisualContainer" class="mono-ledger text-xs overflow-x-auto bg-[#FBF9F4] border border-[#D7CFC1] p-4 rounded shadow-sm ledger-grid">
+            <!-- Sample placeholder or dynamic tables will render here -->
+            <div class="text-center py-12 text-[#5F6768]">
+              <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-3 opacity-30 text-[#1B2021]"></i>
+              <p class="font-serif italic text-sm">Please select an existing ledger worksheet or upload your financial files to populate this workspace.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Raw Tab (Hidden by default) -->
+        <div id="viewRaw" class="hidden h-full">
+          <textarea 
+            id="rawViewerTextArea" 
+            readonly 
+            class="w-full h-full p-4 font-mono text-xs bg-[#F5F1E6] border border-[#D7CFC1] rounded focus:outline-none text-[#1B2021] resize-none leading-relaxed"
+            placeholder="Raw CSV or unformatted document data will appear here..."
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Ledger Summary Stats Footer Bar -->
+      <div class="h-10 border-t border-[#D7CFC1] bg-[#F5F1E6] flex items-center justify-between px-4 text-xs font-mono text-[#5F6768] select-none shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[#2A4E65]"></span>
+          <span>Scope: Active Document context bound directly to AI Agent</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span id="viewerLineCount">Lines: 0</span>
+          <span id="viewerWordCount">Words: 0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUMN 3: RIGHT SIDE - CHATBOT PANEL (Width: 4/12) -->
+    <section class="col-span-4 bg-[#FDFBF7] flex flex-col overflow-hidden h-full">
+      <!-- Chat Header -->
+      <div class="h-14 border-b border-[#D7CFC1] bg-[#F5F1E6] flex items-center justify-between px-4 shrink-0">
+        <div class="flex items-center space-x-2">
+          <div class="relative">
+            <i data-lucide="bot" class="w-5 h-5 text-[#2A4E65]"></i>
+            <span id="chatModelIndicator" class="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-white"></span>
+          </div>
+          <div>
+            <h3 class="serif-title text-sm font-semibold text-[#1B2021]">ArchivCost-Gemini Agent</h3>
+            <p class="text-[9px] font-mono text-[#5F6768]">MODEL: gemini-2.5-flash</p>
+          </div>
+        </div>
+        
+        <!-- Clear History Action -->
+        <button onclick="clearChat()" class="text-xs text-[#5F6768] hover:text-[#1B2021] flex items-center gap-1 font-mono hover:bg-[#ECE6D9] px-2 py-1 rounded border border-[#CFC5B4] transition-all">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
+        </button>
+      </div>
+
+      <!-- Active context warning/notification -->
+      <div id="activeContextBanner" class="bg-[#ECE6D9] border-b border-[#D7CFC1] px-4 py-1.5 text-[11px] font-mono text-[#2A4E65] flex items-center gap-2 shrink-0">
+        <i data-lucide="link" class="w-3.5 h-3.5 animate-pulse"></i>
+        <span class="truncate">Context: No active document loaded</span>
+      </div>
+
+      <!-- Messages Stream Area -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4" id="chatStream">
+        <!-- Initial Greetings -->
+        <div class="flex gap-3 max-w-[85%]">
+          <div class="w-8 h-8 rounded-full bg-[#2A4E65] flex items-center justify-center text-white text-xs font-serif shrink-0 mt-1 shadow-sm">
+            AI
+          </div>
+          <div class="space-y-1">
+            <div class="bg-[#F5F1E6] border border-[#D7CFC1] rounded-lg p-3 text-xs leading-relaxed text-[#1B2021]">
+              <p class="font-semibold mb-1 serif-title">Salutations, Management Accountant.</p>
+              <p class="mb-2">I am your specialized archival cost-intelligence model. Please complete the following to begin automation:</p>
+              <ol class="list-decimal pl-4 space-y-1 font-mono text-[11px] text-[#5F6768]">
+                <li>Paste your <strong class="text-[#2A4E65]">Gemini API Key</strong> in the top-right text bar and click <strong class="text-[#2A4E65]">Connect</strong>.</li>
+                <li>Upload custom ledger files or click on one of the pre-baked Cost Workbooks below the left Document Library.</li>
+                <li>Ask me to decompose manufacturing variance, perform overhead analysis, build allocation reports, or verify standard costs.</li>
+              </ol>
+            </div>
+            <span class="text-[9px] font-mono text-[#5F6768] block pl-1">System • Now</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Suggested Prompt Chutes -->
+      <div class="p-3 bg-[#F5F1E6] border-t border-[#D7CFC1] space-y-1.5 select-none shrink-0">
+        <span class="text-[10px] font-mono uppercase tracking-widest text-[#5F6768] block">Auditing Shortcuts</span>
+        <div class="flex gap-1.5 overflow-x-auto pb-1" id="chatSuggestions">
+          <button onclick="injectPromptText('Summarize the main cost anomalies found in this document.')" class="text-[11px] bg-white border border-[#CFC5B4] hover:bg-[#FDFBF7] hover:border-[#2A4E65] text-[#1B2021] rounded-full px-3 py-1 transition-all whitespace-nowrap">
+            Analyze Anomalies
+          </button>
+          <button onclick="injectPromptText('Generate a full vertical Cost Sheet summarizing the active dataset.')" class="text-[11px] bg-white border border-[#CFC5B4] hover:bg-[#FDFBF7] hover:border-[#2A4E65] text-[#1B2021] rounded-full px-3 py-1 transition-all whitespace-nowrap">
+            Build Cost Sheet
+          </button>
+          <button onclick="injectPromptText('Perform a Direct labor rate variance analysis.')" class="text-[11px] bg-white border border-[#CFC5B4] hover:bg-[#FDFBF7] hover:border-[#2A4E65] text-[#1B2021] rounded-full px-3 py-1 transition-all whitespace-nowrap">
+            Labor Variance
+          </button>
+          <button onclick="injectPromptText('Explain overhead allocation drivers here.')" class="text-[11px] bg-white border border-[#CFC5B4] hover:bg-[#FDFBF7] hover:border-[#2A4E65] text-[#1B2021] rounded-full px-3 py-1 transition-all whitespace-nowrap">
+            Identify Drivers
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat Input Box -->
+      <div class="p-3 border-t border-[#D7CFC1] bg-white shrink-0">
+        <div class="flex items-center bg-[#F5F1E6] border border-[#CFC5B4] rounded-lg p-1.5 focus-within:ring-1 focus-within:ring-[#2A4E65] focus-within:bg-white transition-all">
+          <textarea 
+            id="chatInput" 
+            placeholder="Command the AI Agent (e.g. 'Audit the cost variances...')" 
+            rows="1"
+            class="flex-1 bg-transparent border-0 outline-none text-xs px-2 py-1.5 text-[#1B2021] placeholder-[#5F6768] resize-none focus:ring-0 max-h-24 leading-relaxed"
+            onkeydown="handleChatKeyDown(event)"
+          ></textarea>
+          <button 
+            id="sendMsgBtn" 
+            onclick="sendMessage()" 
+            class="bg-[#2A4E65] hover:bg-[#1E384A] text-white p-2 rounded-md transition-all shrink-0 self-end shadow-sm"
+          >
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <p class="text-[9px] text-[#5F6768] mt-1.5 text-center font-mono uppercase tracking-widest">Secure Client-Side Endpoint Communication</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- HELP & GUIDE OVERLAY MODAL -->
+  <div id="helpModal" class="hidden fixed inset-0 bg-[#1B2021]/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+    <div class="bg-[#FDFBF7] border border-[#D7CFC1] rounded-xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden max-h-[85vh]">
+      <div class="p-6 border-b border-[#D7CFC1] bg-[#F5F1E6] flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i data-lucide="award" class="w-6 h-6 text-[#2A4E65]"></i>
+          <div>
+            <h3 class="serif-title text-lg font-bold text-[#1B2021]">ArchivCost User Manual</h3>
+            <p class="text-xs text-[#5F6768] font-mono">Automating Management Cost Systems & Intelligence</p>
+          </div>
+        </div>
+        <button onclick="toggleHelpModal()" class="text-[#5F6768] hover:text-[#1B2021] p-1 rounded hover:bg-[#ECE6D9]">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto space-y-4 text-xs leading-relaxed text-[#1B2021]">
+        <div>
+          <h4 class="font-bold text-[#2A4E65] text-sm serif-title mb-1">Introduction</h4>
+          <p>This notebook LLM application is styled as a classical, minimal archive ledger to relieve cost accountants of manual, repetitive cost analysis. It integrates a powerful custom Gemini 2.5 context engine directly on the front-end.</p>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-[#2A4E65] text-sm serif-title mb-1">Core Components</h4>
+          <ul class="list-disc pl-5 space-y-1 text-[#5F6768]">
+            <li><strong>Document Library (Left Column):</strong> Upload CSV, text, JSON, or PDF records. Preloads demo worksheets like activity-based costing allocations and standard variances.</li>
+            <li><strong>Document Viewer (Middle Column):</strong> Interactive render panel highlighting cost allocations, ledger items, variance formulas, and anomalies with direct visual markup.</li>
+            <li><strong>AI Chatbot (Right Column):</strong> Fed with current document context to answer accounting queries using advanced Gemini logic.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-[#2A4E65] text-sm serif-title mb-1">Accounting Operations Supported</h4>
+          <ul class="list-disc pl-5 space-y-1 text-[#5F6768]">
+            <li><strong>Variance Auditing:</strong> Calculating Price and Usage variances, pinpointing responsible departments (procurement, operations).</li>
+            <li><strong>Overhead Disposition:</strong> Determining whether manufacturing overhead was under- or over-applied, allocating differences to Cost of Goods Sold (COGS).</li>
+            <li><strong>Margin Optimization:</strong> Recommending reduction paths for fixed and semi-variable expenses based on volume-profit data.</li>
+          </ul>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded p-3 text-amber-900 font-mono text-[11px]">
+          <strong>Security Notice:</strong> Your Gemini API key is stored strictly on your local browser session and remains private. All AI calculations execute directly via secure client-to-Google Cloud network requests.
+        </div>
+      </div>
+
+      <div class="p-4 bg-[#F5F1E6] border-t border-[#D7CFC1] flex justify-end">
+        <button onclick="toggleHelpModal()" class="bg-[#2A4E65] hover:bg-[#1E384A] text-white px-4 py-2 rounded text-xs font-mono">
+          Acknowledge & Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+  <!-- JS CONTROLLERS AND INTEGRATION -->
+  <script>
+    // System Global State variables
+    let API_KEY = "";
+    let isConnected = false;
+    let documents = [];
+    let activeDocumentId = null;
+    let activeTab = 'rendered'; // 'rendered' or 'raw'
+    let chatHistory = [];
+
+    // Preloaded Demo Ledger Datasets
+    const DEMO_DOCUMENTS = {
+      variance: {
+        id: "demo-variance",
+        name: "Q2_VARIANCES_REPORT.csv",
+        type: "csv",
+        size: "1,240 bytes",
+        raw: `Ledger,MaterialCode,StandardCost,ActualCost,StandardQty,ActualQty,UnitMeasure
+M001,Alum-Frame-T1,12.50,14.20,500,480,Units
+M002,Polycarbonate-S3,8.90,8.10,1200,1250,SqMeter
+M003,Steel-Bracket-L,3.20,3.20,2500,2700,Units
+L001,Machinist-ClassA,45.00,48.00,160,155,Hours
+L002,Assembly-Tech,22.00,21.50,400,420,Hours
+O001,IndirectMaterial,1.50,1.85,3000,2900,Units
+O002,Electricity-KWh,0.18,0.22,45000,48000,KilowattHours`,
+        metadata: {
+          period: "Q2 FY2026",
+          department: "Fabrication Unit 4",
+          analyst: "M. Henderson, CMA"
+        }
+      },
+      abc: {
+        id: "demo-abc",
+        name: "ABC_ALLOCATIONS_FY26.txt",
+        type: "txt",
+        size: "945 bytes",
+        raw: `========================================================================
+ACTIVITY-BASED COSTING (ABC) ALLOCATION SYSTEM - FY26 RUN
+========================================================================
+Activity Pool           Total Cost   Cost Driver        Annual Volume
+------------------------------------------------------------------------
+Machine Setup           $240,000     No. of Setups      800 Setups
+Quality Control         $180,000     No. of Inspections 3,000 Inspections
+Material Handling       $95,000      No. of Parts       190,000 Parts
+Product Engineering     $150,000     No. of Eng. Hours  1,500 Hours
+Factory Management      $320,000     Direct Labor Hrs   40,000 Hours
+
+Allocations by Product Line:
+- Line Alpha (High Volume):
+  * Setups: 100
+  * Inspections: 300
+  * Material parts: 45,000
+  * Eng. Hours: 200
+  * Labor Hours: 15,000
+
+- Line Beta (Specialized/Low Volume):
+  * Setups: 450
+  * Inspections: 1,800
+  * Material parts: 15,000
+  * Eng. Hours: 900
+  * Labor Hours: 8,500
+========================================================================`,
+        metadata: {
+          period: "Full Year FY26 Projection",
+          department: "Product Engineering Group",
+          analyst: "S. Vance, Principal Cost Architect"
+        }
+      },
+      overhead: {
+        id: "demo-overhead",
+        name: "OVERHEAD_DISPOSITION.json",
+        type: "json",
+        size: "830 bytes",
+        raw: `{
+  "system": "Manufacturing Overhead Allocation Ledger",
+  "fiscalYear": "2026",
+  "quarter": "Q1",
+  "overheadAccounts": [
+    {
+      "account": "Indirect Factory Labor",
+      "budgetedOverhead": 85000,
+      "actualOverhead": 92400,
+      "allocationBase": "Direct Machine Hours"
+    },
+    {
+      "account": "Factory Rent & Amortization",
+      "budgetedOverhead": 120000,
+      "actualOverhead": 120000,
+      "allocationBase": "Square Footage"
+    },
+    {
+      "account": "Equipment Depreciation",
+      "budgetedOverhead": 45000,
+      "actualOverhead": 48500,
+      "allocationBase": "Machine Hours"
+    },
+    {
+      "account": "Factory Utilities & Steam",
+      "budgetedOverhead": 32000,
+      "actualOverhead": 39150,
+      "allocationBase": "Kilowatt Hours"
+    }
+  ],
+  "allocationRatePerMachineHour": 14.50,
+  "actualMachineHoursWorked": 19200
+}`,
+        metadata: {
+          period: "Q1 FY26 Closing",
+          department: "General Manufacturing",
+          analyst: "K. Patel, CMA"
+        }
+      }
+    };
+
+    // System Prompt tailored for professional Cost Accountants with enhanced vertical cost sheet guidelines
+    const SYSTEM_INSTRUCTION_PROMPT = `You are "ArchivCost-Gemini Agent", a highly specialized, elite AI assistant acting as a Senior Certified Management Accountant (CMA) and expert Forensic Cost Auditor.
+Your primary objective is to assist the user (a cost accountant) in automating tedious calculations, checking for errors, summarizing cost structures, decomposing variances, and performing analytical cost auditing.
+
+Core Domain Knowledge you possess:
+1. Standard Costing systems (Material Price/Usage variance, Labor Rate/Efficiency variance, Fixed & Variable Overhead volume and spending variances).
+2. Cost Allocation Methodologies: Direct, Step-down, Reciprocal, and Activity-Based Costing (ABC) using relevant cost drivers.
+3. Cost-Volume-Profit (CVP) analysis, break-even targets, margin of safety calculations, and contribution margin ledgers.
+4. Disposition of Over/Under-applied Overhead to COGS, Work-in-Process (WIP), and Finished Goods inventory.
+
+Output Style Rules:
+- Render your answers in a professional, crisp, and intellectually rigorous format suitable for executive decision-making.
+- Provide clear mathematical/accounting proofs of any variance calculations.
+- **IMPORTANT**: Whenever the user asks you to present costs, break downs, summaries, or sheets, ALWAYS present them in a structured, vertically aligned Cost Sheet ledger format using markdown tables.
+- A proper vertical Cost Sheet layout generally flows downward in this exact sequence:
+  1. Direct Materials Cost + Direct Labor Cost + Direct Expenses = **PRIME COST**
+  2. Prime Cost + Factory Overheads = **WORKS COST / FACTORY COST**
+  3. Works/Factory Cost + Office & Administration Overheads = **COST OF PRODUCTION**
+  4. Cost of Production + Selling & Distribution Overheads = **COST OF SALES**
+  5. Cost of Sales + Profit/Margin = **SALES REVENUE**
+- Ensure you format these key aggregate lines clearly so that the system's ledger rules can format the rows (e.g. bolding total rows, double underlines, and right-aligning costs).
+- Be concise but forensic. Do not speak in vague generalities. Focus immediately on the cost numbers in the uploaded document context.
+- If no document is selected, remind the user gently to select/upload a ledger to enable contextual intelligence.`;
+
+    // Initialize Page on DOM Loaded
+    window.onload = function() {
+      // Set up pdf.js worker URL matching our source version
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+      }
+
+      lucide.createIcons();
+      loadDemoLedgersIntoLibrary();
+      restoreApiKeyFromSession();
+      setViewerTab('rendered');
+      
+      // Auto resize height dynamic checks
+      const tx = document.getElementById("chatInput");
+      tx.addEventListener("input", function() {
+        this.style.height = "auto";
+        this.style.height = (this.scrollHeight) + "px";
+      }, false);
+    };
+
+    // Populate Initial Ledgers
+    function loadDemoLedgersIntoLibrary() {
+      documents = [
+        { ...DEMO_DOCUMENTS.variance },
+        { ...DEMO_DOCUMENTS.abc },
+        { ...DEMO_DOCUMENTS.overhead }
+      ];
+      renderDocumentLibrary();
+      selectDocument(documents[0].id);
+    }
+
+    // Restore Key if previously inputted during active session
+    function restoreApiKeyFromSession() {
+      const savedKey = sessionStorage.getItem("ARCHIVCOST_GEMINI_KEY");
+      if (savedKey) {
+        document.getElementById("apiKeyInput").value = savedKey;
+        validateAndSetApiKey();
+      }
+    }
+
+    // Toggle Help Modal
+    function toggleHelpModal() {
+      const modal = document.getElementById("helpModal");
+      modal.classList.toggle("hidden");
+    }
+
+    // Toast Manager (Custom alert fallback)
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      
+      let bgStyle = "bg-[#F5F1E6] text-[#1B2021] border-[#CFC5B4]";
+      let icon = "info";
+      
+      if (type === "success") {
+        bgStyle = "bg-emerald-50 text-emerald-900 border-emerald-300";
+        icon = "check-circle";
+      } else if (type === "error") {
+        bgStyle = "bg-rose-50 text-rose-900 border-rose-300";
+        icon = "alert-triangle";
+      }
+      
+      toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${bgStyle} transition-all duration-300 transform translate-y-2 opacity-0 font-mono text-xs max-w-sm`;
+      toast.innerHTML = `
+        <i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i>
+        <div class="flex-1">${message}</div>
+      `;
+      
+      container.appendChild(toast);
+      lucide.createIcons({attrs: {"data-lucide": true}});
+      
+      // Animate entry
+      setTimeout(() => {
+        toast.classList.remove("translate-y-2", "opacity-0");
+      }, 50);
+      
+      // Remove after 4s
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "translate-y-2");
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 4000);
+    }
+
+    // API Key Authentication & Connection Status Handlers
+    async function validateAndSetApiKey() {
+      const keyVal = document.getElementById("apiKeyInput").value.trim();
+      if (!keyVal) {
+        showToast("Please enter an API Key first", "error");
+        return;
+      }
+
+      const statusDot = document.getElementById("statusDot");
+      const statusLabel = document.getElementById("statusLabel");
+      const connectBtn = document.getElementById("connectBtn");
+
+      connectBtn.innerText = "TESTING...";
+      connectBtn.disabled = true;
+
+      try {
+        // Quick simple check with small token count to test connectivity
+        const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${keyVal}`;
+        const payload = {
+          contents: [{ parts: [{ text: "Respond only with the word OK." }] }]
+        };
+
+        const response = await fetch(testUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const resData = await response.json();
+          API_KEY = keyVal;
+          isConnected = true;
+          sessionStorage.setItem("ARCHIVCOST_GEMINI_KEY", keyVal);
+          
+          // Style adjustments for status connected
+          statusDot.className = "w-3.5 h-3.5 rounded-full bg-emerald-500 border border-emerald-700/30 shadow-[0_0_10px_rgba(16,185,129,0.5)]";
+          statusLabel.innerText = "API ACTIVE";
+          statusLabel.className = "text-xs font-mono uppercase tracking-wider text-emerald-700 font-bold";
+          
+          const chatModelIndicator = document.getElementById("chatModelIndicator");
+          chatModelIndicator.className = "absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white";
+          
+          connectBtn.innerText = "CONNECTED";
+          connectBtn.className = "bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-mono font-medium px-3 py-1 rounded transition-all shadow-sm";
+          
+          showToast("Gemini 2.5 Flash API validation successful!", "success");
+        } else {
+          throw new Error("HTTP Handshake failed with status " + response.status);
+        }
+      } catch (err) {
+        console.error(err);
+        isConnected = false;
+        API_KEY = "";
+        statusDot.className = "w-3.5 h-3.5 rounded-full bg-red-500 animate-pulse border border-red-700/30";
+        statusLabel.innerText = "API DISCONNECTED";
+        statusLabel.className = "text-xs font-mono uppercase tracking-wider text-red-600 font-bold";
+        
+        const chatModelIndicator = document.getElementById("chatModelIndicator");
+        chatModelIndicator.className = "absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-white";
+        
+        connectBtn.innerText = "CONNECT";
+        connectBtn.className = "bg-[#2A4E65] hover:bg-[#1E384A] text-white text-xs font-mono font-medium px-3 py-1 rounded transition-all shadow-sm";
+        connectBtn.disabled = false;
+        
+        showToast("Validation failed. Check your API key and retry.", "error");
+      }
+    }
+
+    // Document Library View Renderer
+    function renderDocumentLibrary() {
+      const container = document.getElementById("docListContainer");
+      container.innerHTML = "";
+      
+      const badge = document.getElementById("docCountBadge");
+      badge.innerText = `${documents.length} Files`;
+
+      documents.forEach(doc => {
+        const isActive = doc.id === activeDocumentId;
+        const colorClass = doc.type === 'csv' ? 'bg-amber-100 border-amber-300 text-amber-800' :
+                           doc.type === 'json' ? 'bg-blue-100 border-blue-300 text-blue-800' : 
+                           doc.type === 'pdf' ? 'bg-red-100 border-red-300 text-red-800' : 'bg-emerald-100 border-emerald-300 text-emerald-800';
+
+        const wrapperClass = isActive 
+          ? "border-2 border-[#2A4E65] bg-[#FDFBF7] shadow-md"
+          : "border border-[#CFC5B4] bg-[#FDFBF7] hover:bg-[#F3EDE2] hover:border-[#1E384A]";
+
+        container.innerHTML += `
+          <div 
+            class="p-3 rounded-lg cursor-pointer transition-all flex flex-col space-y-1.5 select-none ${wrapperClass}"
+            onclick="selectDocument('${doc.id}')"
+          >
+            <div class="flex items-start justify-between">
+              <span class="text-xs font-mono font-bold text-[#1B2021] truncate max-w-[140px]" title="${doc.name}">${doc.name}</span>
+              <span class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded border ${colorClass}">${doc.type}</span>
+            </div>
+            
+            <div class="flex items-center justify-between text-[10px] text-[#5F6768] font-mono">
+              <span>SIZE: ${doc.size}</span>
+              <button onclick="deleteDoc(event, '${doc.id}')" class="text-rose-600 hover:text-rose-900 font-bold transition-colors">DELETE</button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Handles user dragging & dropping or manual input loading of new documents (CSV, TXT, JSON, MD, PDF)
+    function handleFileUpload(e) {
+      const files = e.target.files;
+      if (!files.length) return;
+
+      Array.from(files).forEach(file => {
+        const extension = file.name.split('.').pop().toLowerCase();
+        
+        // Internal helper to complete construction of a parsed file document
+        const createDocument = (name, type, size, content) => {
+          const newDoc = {
+            id: 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            name: name,
+            type: type,
+            size: formatBytes(size),
+            raw: content,
+            metadata: {
+              period: "Uploaded Record File",
+              department: "User Imports",
+              analyst: "Local Audit Agent"
+            }
+          };
+
+          documents.push(newDoc);
+          renderDocumentLibrary();
+          selectDocument(newDoc.id);
+          showToast(`Imported ${file.name} successfully!`, "success");
+        };
+
+        if (extension === 'pdf') {
+          showToast("Parsing PDF document structures...", "info");
+          
+          const reader = new FileReader();
+          reader.onload = async function(evt) {
+            try {
+              const typedarray = new Uint8Array(evt.target.result);
+              
+              // Validate PDF.js library exists
+              if (typeof pdfjsLib === 'undefined') {
+                throw new Error("PDF.js library is not loaded on this viewport page.");
+              }
+              
+              const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+              let fullText = "";
+
+              for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                
+                // Sort page items by coordinates to construct correct layout sequence
+                // (Top to bottom, left to right)
+                const items = textContent.items;
+                items.sort((a, b) => {
+                  // If on different vertical positions (tolerance limit 5px)
+                  if (Math.abs(a.transform[5] - b.transform[5]) > 5) {
+                    return b.transform[5] - a.transform[5]; // higher Y coordinate is top of page
+                  }
+                  // Otherwise read left-to-right (X coordinate)
+                  return a.transform[4] - b.transform[4];
+                });
+
+                let lastY = null;
+                let pageText = "";
+                for (let item of items) {
+                  // Insert linebreaks if vertical spacing changes significantly
+                  if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+                    pageText += "\n";
+                  }
+                  pageText += item.str + " ";
+                  lastY = item.transform[5];
+                }
+
+                fullText += `--- PAGE ${i} ---\n${pageText.trim()}\n\n`;
+              }
+
+              if (!fullText.trim()) {
+                fullText = "[This PDF contains no extractable text. It may be a scanned image-only PDF. Please try a searchable PDF or upload CSV/TXT formats.]";
+              }
+
+              createDocument(file.name, extension, file.size, fullText);
+
+            } catch (err) {
+              console.error("PDF Parsing failed:", err);
+              showToast("Failed to parse binary PDF. Try using a text format.", "error");
+            }
+          };
+          reader.readAsArrayBuffer(file);
+
+        } else {
+          // Standard text reading mechanism for txt, csv, md, json
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            createDocument(file.name, extension, file.size, evt.target.result);
+          };
+          reader.readAsText(file);
+        }
+      });
+    }
+
+    // Selection of Ledger Document
+    function selectDocument(id) {
+      activeDocumentId = id;
+      
+      // Update UI active styling
+      renderDocumentLibrary();
+
+      const doc = documents.find(d => d.id === id);
+      if (!doc) return;
+
+      // Update Active contextual Banner on Chat Column
+      const banner = document.getElementById("activeContextBanner");
+      banner.innerHTML = `<i data-lucide="link-2" class="w-3.5 h-3.5 text-emerald-700"></i> <span class="truncate">Context: Active Ledger [${doc.name}]</span>`;
+      lucide.createIcons({attrs: {"data-lucide": true}});
+
+      // Update Center Viewer Tab values
+      document.getElementById("renderDocTitle").innerText = doc.name;
+      document.getElementById("renderDocMetaType").innerText = `LEDGER DATA ARCHIVE • POOL: ${doc.metadata.department}`;
+      document.getElementById("renderDocMetaDate").innerText = doc.metadata.period;
+      document.getElementById("renderDocSize").innerText = doc.size;
+      
+      // Calculate basic statistics
+      const lines = doc.raw.split('\n').length;
+      const words = doc.raw.split(/\s+/).filter(Boolean).length;
+      document.getElementById("viewerLineCount").innerText = `Lines: ${lines}`;
+      document.getElementById("viewerWordCount").innerText = `Words: ${words}`;
+
+      // Show Raw in raw panel
+      document.getElementById("rawViewerTextArea").value = doc.raw;
+
+      // Render custom ledger visual formatting
+      renderLedgerInViewer(doc);
+    }
+
+    // Ledger Beautiful Table Parser for Visual Excellence
+    function renderLedgerInViewer(doc) {
+      const container = document.getElementById("ledgerVisualContainer");
+      
+      if (doc.type === "csv") {
+        container.innerHTML = parseCSVToHTMLTable(doc.raw);
+      } else if (doc.type === "json") {
+        container.innerHTML = parseJSONToHTMLDisplay(doc.raw);
+      } else {
+        // Render general txt/md cleanly inside parchment with typography
+        container.innerHTML = `<pre class="whitespace-pre-wrap font-mono text-xs text-[#1B2021] leading-relaxed">${escapeHTML(doc.raw)}</pre>`;
+      }
+    }
+
+    // Specialized Parsers for Cost Accounting Ledger visual elegance
+    function parseCSVToHTMLTable(csvText) {
+      const lines = csvText.trim().split("\n");
+      if (lines.length === 0) return "<p class='italic text-center text-red-500'>Empty Document</p>";
+
+      let html = `<table class="min-w-full divide-y-2 divide-[#D7CFC1] text-left text-[11px] font-mono bg-white border border-[#D7CFC1] shadow-sm">`;
+      
+      // Header
+      const headers = lines[0].split(",");
+      html += `<thead class="bg-[#F5F1E6]"><tr>`;
+      headers.forEach(h => {
+        html += `<th class="px-3 py-2 text-xs font-bold text-[#1B2021] uppercase tracking-wider border-b border-[#D7CFC1]">${escapeHTML(h.trim())}</th>`;
+      });
+      html += `</tr></thead><tbody class="divide-y divide-[#EADFCF]">`;
+
+      // Data Rows
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cols = lines[i].split(",");
+        
+        // Highlight logic for specific accounting anomalies or totals
+        const isTotalRow = cols[0].toLowerCase().includes("total") || cols[0].toLowerCase().includes("summary") || cols[0].toLowerCase().includes("prime cost");
+        const rowClass = isTotalRow ? "bg-[#F5F1E6] font-bold" : (i % 2 === 0 ? "bg-[#FCFAF5]" : "bg-white");
+
+        html += `<tr class="${rowClass} hover:bg-[#F0EBDF] transition-colors">`;
+        cols.forEach((cell, cellIdx) => {
+          let cellText = cell.trim();
+          let cellClass = "px-3 py-2 text-[#1B2021] border-r border-[#EADFCF] last:border-r-0";
+
+          // Align numbers to the right for financial ledger style
+          const isNumeric = !isNaN(parseFloat(cellText)) && isFinite(cellText);
+          if (isNumeric) {
+            cellClass += " text-right font-semibold";
+            // Format monetary values if header contains cost
+            const hLow = headers[cellIdx]?.toLowerCase() || "";
+            if (hLow.includes("cost") || hLow.includes("rate") || hLow.includes("variance") || cellText.includes(".")) {
+              cellText = parseFloat(cellText).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+          }
+          
+          html += `<td class="${cellClass}">${escapeHTML(cellText)}</td>`;
+        });
+        html += `</tr>`;
+      }
+
+      html += `</tbody></table>`;
+      return html;
+    }
+
+    function parseJSONToHTMLDisplay(jsonText) {
+      try {
+        const obj = JSON.parse(jsonText);
+        let html = `<div class="p-2 space-y-4 font-mono text-xs">`;
+        
+        // Render root primitive items nicely as metadata key-value list first
+        html += `<div class="bg-white border border-[#D7CFC1] p-3 rounded shadow-inner grid grid-cols-2 gap-2">`;
+        for (const [key, val] of Object.entries(obj)) {
+          if (typeof val !== 'object') {
+            html += `<div><span class="text-[#5F6768] font-bold uppercase">${escapeHTML(key)}:</span> <span class="text-[#1B2021] font-semibold">${escapeHTML(String(val))}</span></div>`;
+          }
+        }
+        html += `</div>`;
+
+        // If it contains arrays of tables, let's render them beautifully as structured cost grids
+        for (const [key, val] of Object.entries(obj)) {
+          if (Array.isArray(val) && val.length > 0) {
+            html += `<div class="mt-4"><h5 class="font-serif font-semibold text-sm text-[#2A4E65] mb-2 uppercase tracking-wide border-b border-[#D7CFC1] pb-1">${escapeHTML(key)}</h5>`;
+            
+            // Build array table
+            const sample = val[0];
+            const keys = Object.keys(sample);
+            
+            html += `<table class="min-w-full divide-y divide-[#D7CFC1] text-left text-[11px] bg-white border border-[#D7CFC1] shadow-sm">`;
+            html += `<thead class="bg-[#F5F1E6]"><tr>`;
+            keys.forEach(k => {
+              html += `<th class="px-3 py-2 font-bold text-[#1B2021] uppercase tracking-wider">${escapeHTML(k)}</th>`;
+            });
+            html += `</tr></thead><tbody class="divide-y divide-[#EADFCF]">`;
+            
+            val.forEach((item, rIdx) => {
+              html += `<tr class="${rIdx % 2 === 0 ? 'bg-[#FCFAF5]' : 'bg-white'} hover:bg-[#F0EBDF]">`;
+              keys.forEach(k => {
+                const isNum = typeof item[k] === 'number';
+                const tdClass = isNum ? "px-3 py-2 text-right font-semibold" : "px-3 py-2 text-[#1B2021]";
+                let cellVal = item[k];
+                if (isNum) {
+                  cellVal = cellVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+                html += `<td class="${tdClass} border-r border-[#EADFCF] last:border-r-0">${escapeHTML(String(cellVal))}</td>`;
+              });
+              html += `</tr>`;
+            });
+            
+            html += `</tbody></table></div>`;
+          }
+        }
+
+        html += `</div>`;
+        return html;
+      } catch (err) {
+        return `<p class="text-rose-600 font-mono">Invalid Ledger JSON: ${escapeHTML(err.message)}</p>`;
+      }
+    }
+
+    // Toggle Viewer tabs
+    function setViewerTab(tab) {
+      activeTab = tab;
+      const rBtn = document.getElementById("tabRenderBtn");
+      const wBtn = document.getElementById("tabRawBtn");
+      const rView = document.getElementById("viewRendered");
+      const wView = document.getElementById("viewRaw");
+
+      if (tab === 'rendered') {
+        rBtn.className = "text-[11px] font-mono font-medium px-2.5 py-1 rounded bg-[#FDFBF7] text-[#1B2021] shadow-sm transition-all";
+        wBtn.className = "text-[11px] font-mono font-medium px-2.5 py-1 rounded text-[#5F6768] hover:text-[#1B2021] transition-all";
+        rView.classList.remove("hidden");
+        wView.classList.add("hidden");
+      } else {
+        wBtn.className = "text-[11px] font-mono font-medium px-2.5 py-1 rounded bg-[#FDFBF7] text-[#1B2021] shadow-sm transition-all";
+        rBtn.className = "text-[11px] font-mono font-medium px-2.5 py-1 rounded text-[#5F6768] hover:text-[#1B2021] transition-all";
+        wView.classList.remove("hidden");
+        rView.classList.add("hidden");
+      }
+    }
+
+    // Demo Ledger loader
+    function loadDemoLedger(key) {
+      const doc = DEMO_DOCUMENTS[key];
+      if (!doc) return;
+
+      // Check if it already exists, if not, add it
+      let existing = documents.find(d => d.id === doc.id);
+      if (!existing) {
+        documents.push({ ...doc });
+        renderDocumentLibrary();
+      }
+      selectDocument(doc.id);
+      showToast(`Loaded pre-baked cost ledger: ${doc.name}`, "info");
+    }
+
+    // Delete document action
+    function deleteDoc(e, id) {
+      e.stopPropagation();
+      documents = documents.filter(d => d.id !== id);
+      renderDocumentLibrary();
+      
+      if (activeDocumentId === id) {
+        if (documents.length > 0) {
+          selectDocument(documents[0].id);
+        } else {
+          activeDocumentId = null;
+          // Clear views
+          document.getElementById("renderDocTitle").innerText = "Select a document from Library";
+          document.getElementById("ledgerVisualContainer").innerHTML = `
+            <div class="text-center py-12 text-[#5F6768]">
+              <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-3 opacity-30 text-[#1B2021]"></i>
+              <p class="font-serif italic text-sm">Please select an existing ledger worksheet or upload your financial files to populate this workspace.</p>
+            </div>`;
+          document.getElementById("rawViewerTextArea").value = "";
+          document.getElementById("activeContextBanner").innerHTML = `<i data-lucide="link" class="w-3.5 h-3.5 animate-pulse"></i> Context: No active document loaded`;
+          lucide.createIcons({attrs: {"data-lucide": true}});
+        }
+      }
+      showToast("Document deleted", "info");
+    }
+
+    // Input actions from quick toolbars
+    function injectPromptAction(actionName) {
+      if (!activeDocumentId) {
+        showToast("Please load or select a document first before invoking Cost Agent tools", "error");
+        return;
+      }
+      const activeDoc = documents.find(d => d.id === activeDocumentId);
+      let text = "";
+
+      switch(actionName) {
+        case "Analyze Variances":
+          text = `Using the active standard cost ledger "${activeDoc.name}", please isolate and calculate each material and labor variance. State whether they are Favorable (F) or Unfavorable (U), show formulas, and identify logical root-causes that should be escalated to management.`;
+          break;
+        case "Audit Ledger Anomalies":
+          text = `I need a forensic inspection of the loaded ledger sheet "${activeDoc.name}". Look for unusual overhead values, massive direct cost deviations, potential over/under applied overhead issues, or rounding math discrepancies that warrant an audit correction.`;
+          break;
+        case "Find Overhead Drivers":
+          text = `Review the cost pools, drivers, and structures in "${activeDoc.name}". Map activity costs to product lines, identify key drivers, calculate pool allocation rates, and verify if existing costing pools align with Activity-Based Costing principles.`;
+          break;
+        case "Suggest Cost Optimization":
+          text = `Formulate a targeted variable cost optimization blueprint based on the allocations, rates, and values contained in "${activeDoc.name}". Suggest actionable operational optimizations to control direct spending.`;
+          break;
+      }
+
+      injectPromptText(text);
+    }
+
+    // Prompt injector
+    function injectPromptText(text) {
+      const input = document.getElementById("chatInput");
+      input.value = text;
+      input.dispatchEvent(new Event('input')); // Auto-resize height
+      input.focus();
+    }
+
+    // Handles text-area Keyboard Shortcuts
+    function handleChatKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    // Send chat text to Gemini API
+    async function sendMessage() {
+      const chatInput = document.getElementById("chatInput");
+      const prompt = chatInput.value.trim();
+      
+      if (!prompt) return;
+
+      if (!isConnected || !API_KEY) {
+        showToast("Access Denied. Please input a valid Google Gemini API Key in the top right control bar first.", "error");
+        return;
+      }
+
+      // Add User Message
+      addMessageToChatStream("user", prompt);
+      chatInput.value = "";
+      chatInput.style.height = "auto"; // Reset height
+
+      // Add Bot loading placeholder
+      const loadingId = addLoadingMessage();
+
+      try {
+        // Construct contextual prompt linking active document content directly to Gemini context
+        const activeDoc = documents.find(d => d.id === activeDocumentId);
+        let modelPayloadContents = [];
+
+        // Build prompt with explicit file context boundaries
+        let structuredPrompt = "";
+        if (activeDoc) {
+          structuredPrompt += `--- [START OF ACTIVE CONTEXT LEDGER: ${activeDoc.name}] ---\n`;
+          structuredPrompt += `FILE CONTENT FORMAT: ${activeDoc.type.toUpperCase()}\n`;
+          structuredPrompt += `${activeDoc.raw}\n`;
+          structuredPrompt += `--- [END OF ACTIVE CONTEXT LEDGER] ---\n\n`;
+        }
+        
+        structuredPrompt += `USER REQUEST: ${prompt}`;
+
+        // Build conversation stream payload
+        // We include history for continuous tracking context
+        const contentsPayload = [
+          ...chatHistory.map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+          })),
+          {
+            role: "user",
+            parts: [{ text: structuredPrompt }]
+          }
+        ];
+
+        const fetchUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+        
+        // Exponential Backoff Fetch implementation
+        let response = null;
+        let delay = 1000;
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          try {
+            response = await fetch(fetchUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: contentsPayload,
+                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION_PROMPT }] }
+              })
+            });
+            if (response.ok) break;
+          } catch (fetchErr) {
+            if (attempt === 5) throw fetchErr;
+          }
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2; // exponential scaling
+        }
+
+        if (!response.ok) {
+          throw new Error(`API returned response error status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        removeLoadingMessage(loadingId);
+
+        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to parse valid text. Please clarify or review the active ledger document.";
+        addMessageToChatStream("model", replyText);
+
+      } catch (err) {
+        console.error(err);
+        removeLoadingMessage(loadingId);
+        addMessageToChatStream("model", `⚠️ **API Execution Error:** ${err.message}. Please verify network stability and your authorization key settings.`);
+      }
+    }
+
+    // UI Message Builders
+    function addMessageToChatStream(role, text) {
+      const chatStream = document.getElementById("chatStream");
+      
+      const isUser = role === "user";
+      const icon = isUser ? "U" : "AI";
+      const iconBg = isUser ? "bg-[#ECE6D9] text-[#1B2021] border border-[#CFC5B4]" : "bg-[#2A4E65] text-white";
+      const msgClass = isUser ? "bg-white border border-[#D7CFC1]" : "bg-[#F5F1E6] border border-[#D7CFC1]";
+
+      // Convert standard markdown-style lists, tables, and math structures cleanly before rendering
+      const renderedText = formatResponseText(text);
+
+      const msgHtml = `
+        <div class="flex gap-3 max-w-[85%] ${isUser ? 'ml-auto flex-row-reverse' : ''}">
+          <div class="w-8 h-8 rounded-full ${iconBg} flex items-center justify-center text-xs font-serif shrink-0 mt-1 shadow-sm">
+            ${icon}
+          </div>
+          <div class="space-y-1 w-full">
+            <div class="${msgClass} rounded-lg p-3 text-xs leading-relaxed text-[#1B2021] overflow-x-auto">
+              ${renderedText}
+            </div>
+            <span class="text-[9px] font-mono text-[#5F6768] block ${isUser ? 'text-right pr-1' : 'pl-1'}">${isUser ? 'Accountant' : 'ArchivCost'} • Just now</span>
+          </div>
+        </div>
+      `;
+
+      chatStream.innerHTML += msgHtml;
+      chatStream.scrollTop = chatStream.scrollHeight;
+
+      // Keep tracking history for consecutive turns
+      chatHistory.push({ role, text });
+    }
+
+    // Loading indicators
+    function addLoadingMessage() {
+      const chatStream = document.getElementById("chatStream");
+      const loadingId = "loader_" + Date.now();
+
+      const loadingHtml = `
+        <div id="${loadingId}" class="flex gap-3 max-w-[85%]">
+          <div class="w-8 h-8 rounded-full bg-[#2A4E65] text-white flex items-center justify-center text-xs font-serif shrink-0 mt-1 shadow-sm animate-pulse">
+            AI
+          </div>
+          <div class="space-y-1">
+            <div class="bg-[#F5F1E6] border border-[#D7CFC1] rounded-lg p-3 text-xs text-[#1B2021]">
+              <div class="flex items-center space-x-2">
+                <div class="w-2 h-2 bg-[#2A4E65] rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                <div class="w-2 h-2 bg-[#2A4E65] rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                <div class="w-2 h-2 bg-[#2A4E65] rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+                <span class="text-[10px] font-mono text-[#5F6768] pl-2">Decomposing Cost Matrices...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      chatStream.innerHTML += loadingHtml;
+      chatStream.scrollTop = chatStream.scrollHeight;
+      return loadingId;
+    }
+
+    // Remove loading message
+    function removeLoadingMessage(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    // Clear Chat
+    function clearChat() {
+      chatHistory = [];
+      const chatStream = document.getElementById("chatStream");
+      chatStream.innerHTML = `
+        <div class="flex gap-3 max-w-[85%]">
+          <div class="w-8 h-8 rounded-full bg-[#2A4E65] flex items-center justify-center text-white text-xs font-serif shrink-0 mt-1 shadow-sm">
+            AI
+          </div>
+          <div class="space-y-1">
+            <div class="bg-[#F5F1E6] border border-[#D7CFC1] rounded-lg p-3 text-xs leading-relaxed text-[#1B2021]">
+              <p class="font-semibold mb-1 serif-title">Log cleared.</p>
+              <p>Ready for your cost-system queries. Select an active document ledger to feed my intelligence context.</p>
+            </div>
+            <span class="text-[9px] font-mono text-[#5F6768] block pl-1">System • Just now</span>
+          </div>
+        </div>
+      `;
+      showToast("Chat log cleared", "info");
+    }
+
+    // Markdown Parser (Super-light client-side formatter supporting bold, lists, math, and professional tables)
+    function formatResponseText(text) {
+      let html = escapeHTML(text);
+
+      // Render code blocks with Ledger border boxes
+      html = html.replace(/```([\s\S]*?)```/gm, (match, code) => {
+        return `<pre class="bg-stone-900 text-stone-100 p-3 rounded font-mono text-[11px] my-2 overflow-x-auto shadow-inner border border-stone-800">${code.trim()}</pre>`;
+      });
+
+      // Simple Table markdown renderer
+      const lines = html.split("\n");
+      let inTable = false;
+      let tableRows = [];
+      let parsedLines = [];
+
+      lines.forEach(line => {
+        if (line.includes("|") && line.trim().startsWith("|")) {
+          inTable = true;
+          tableRows.push(line);
+        } else {
+          if (inTable) {
+            parsedLines.push(convertMarkdownTable(tableRows));
+            tableRows = [];
+            inTable = false;
+          }
+          parsedLines.push(line);
+        }
+      });
+      if (inTable) {
+        parsedLines.push(convertMarkdownTable(tableRows));
+      }
+      html = parsedLines.join("\n");
+
+      // Bolds
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      // Italics
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      // Unordered Lists
+      html = html.replace(/^\s*[-*]\s+(.*)$/gm, '<li class="ml-4 list-disc">$1</li>');
+      // Ordered Lists
+      html = html.replace(/^\s*(\d+)\.\s+(.*)$/gm, '<li class="ml-4 list-decimal">$2</li>');
+      // Paragraph spacing
+      html = html.replace(/\n\n/g, '<br class="my-1.5" />');
+
+      return html;
+    }
+
+    // High performance Markdown table converter with advanced styling of total/subtotal cost rows and right-aligned numbers
+    function convertMarkdownTable(rows) {
+      if (rows.length < 2) return rows.join("\n");
+      
+      let html = `<table class="min-w-full divide-y-2 divide-[#D7CFC1] my-3 border border-[#D7CFC1] bg-white text-[11px] font-mono shadow-sm">`;
+      
+      // Separate headers, lines, and rows
+      const parseCells = (r) => r.split("|").map(c => c.trim()).filter((c, idx, arr) => idx > 0 && idx < arr.length - 1);
+      
+      const headers = parseCells(rows[0]);
+      html += `<thead class="bg-[#F5F1E6]"><tr>`;
+      headers.forEach(h => {
+        // Strip markdown bold asterisks from headers
+        const cleanH = h.replace(/\*\*/g, '');
+        html += `<th class="px-2.5 py-1.5 font-bold text-[#1B2021] uppercase text-left border-b border-[#D7CFC1]">${cleanH}</th>`;
+      });
+      html += `</tr></thead><tbody class="divide-y divide-[#EADFCF]">`;
+
+      // Filter separators
+      const dataRows = rows.slice(1).filter(r => !r.includes("---"));
+      dataRows.forEach((r, idx) => {
+        const cells = parseCells(r);
+        
+        // Determine if this is an accounting total/subtotal row
+        const rowTextCombined = cells.join(" ").toLowerCase();
+        const isTotalRow = rowTextCombined.includes("total") || 
+                           rowTextCombined.includes("prime cost") || 
+                           rowTextCombined.includes("cost of production") || 
+                           rowTextCombined.includes("factory cost") || 
+                           rowTextCombined.includes("works cost") || 
+                           rowTextCombined.includes("net profit") || 
+                           rowTextCombined.includes("cost of sales") ||
+                           rowTextCombined.includes("sales revenue") ||
+                           rowTextCombined.includes("contribution margin");
+
+        let rowClass = idx % 2 === 0 ? 'bg-[#FCFAF5]' : 'bg-white';
+        if (isTotalRow) {
+          rowClass = 'bg-[#ECE6D9] font-bold border-t border-b-2 border-double border-[#2A4E65]';
+        }
+
+        html += `<tr class="${rowClass} hover:bg-[#F0EBDF] transition-colors">`;
+        cells.forEach(c => {
+          let cellText = c;
+          let cellClass = "px-2.5 py-1.5 text-[#1B2021]";
+          
+          // Right-align numbers or monetary values
+          const cleanVal = c.replace(/[\$\,\*\*\s]/g, '');
+          const isNumeric = !isNaN(parseFloat(cleanVal)) && isFinite(cleanVal);
+          if (isNumeric || c.trim().startsWith("$") || c.trim().startsWith("- $") || c.trim().endsWith("%")) {
+            cellClass += " text-right font-semibold";
+          }
+          
+          // If the text inside cells has bold markdown like **text**, render it as strong
+          if (cellText.startsWith("**") && cellText.endsWith("**")) {
+            cellText = `<strong>${cellText.replace(/\*\*/g, '')}</strong>`;
+          }
+
+          html += `<td class="${cellClass}">${cellText}</td>`;
+        });
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table>`;
+      return html;
+    }
+
+    // Helper functions
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+
+    function formatBytes(bytes, decimals = 2) {
+      if (!+bytes) return '0 Bytes';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    }
+  </script>
+</body>
+</html>
